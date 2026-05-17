@@ -1,0 +1,57 @@
+name: Core Run
+
+on:
+  schedule:
+    # Wake up every single hour, 24 times a day
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  execution:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Process Matrix
+        run: |
+          # 1. THE CHAOS FILTER (85% chance to skip)
+          # Waking up 24 times a day with an 85% skip rate means it will trigger 
+          # roughly 3 to 4 times a day, but at completely random hours every day.
+          if [ $((RANDOM % 100)) -lt 85 ]; then
+            echo "Slot skipped to maintain organic variance."
+            exit 0
+          fi
+
+          # 2. RANDOM DELAY (0 to 20 minutes)
+          # Breaks the "top of the hour" pattern completely
+          DELAY=$((RANDOM % 1200))
+          echo "Delaying execution by $DELAY seconds..."
+          sleep $DELAY
+
+          git config --global user.name "sallykong0403"
+          git config --global user.email "sallykong0403@gmail.com"
+
+          # 3. DYNAMIC FILE POOL
+          # The script randomly chooses WHICH file type to modify this time
+          FILES=("index.js" "README.md" "styles.css" "utils.py" "config.json" "data.log")
+          TARGET_FILE=${FILES[$RANDOM % ${#FILES[@]}]}
+
+          # 4. SCRAMBLED SENTENCE GENERATOR
+          # Instead of a list of phrases, this mixes verbs, nouns, and contexts 
+          # to generate hundreds of unique combinations so no two accounts ever look identical.
+          VERBS=("fix" "update" "clean" "refactor" "patch" "adjust" "optimize" "tweak")
+          NOUNS=("logic" "syntax" "spacing" "config" "modules" "comments" "imports" "styles")
+          CONTEXTS=("in core" "for build" "internally" "globally" "in main" "to resolve warnings")
+          
+          V=${VERBS[$RANDOM % ${#VERBS[@]}]}
+          N=${NOUNS[$RANDOM % ${#NOUNS[@]}]}
+          C=${CONTEXTS[$RANDOM % ${#CONTEXTS[@]}]}
+          MSG="$V $N $C"
+
+          # 5. WRITE AND PUSH
+          echo "/* Sync state: $RANDOM */" >> $TARGET_FILE
+          git add $TARGET_FILE
+          git commit -m "$MSG"
+          git push
